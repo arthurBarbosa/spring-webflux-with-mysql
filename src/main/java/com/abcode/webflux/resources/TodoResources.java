@@ -4,12 +4,11 @@ import com.abcode.webflux.entities.Todo;
 import com.abcode.webflux.repositories.TodoRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/todos")
@@ -28,10 +27,15 @@ public class TodoResources {
 
     @PostMapping
     public Mono<Todo> save(@RequestBody Todo todo) {
-        Mono op = Mono.fromCallable(() -> this.transactionTemplate.execute(action -> {
+        Mono<Todo> op = Mono.fromCallable(() -> this.transactionTemplate.execute(action -> {
             final var save = this.todoRepository.save(todo);
             return save;
         }));
         return op;
+    }
+
+    @GetMapping("/{id}")
+    public Mono<Optional<Todo>> findById(@PathVariable Long id){
+        return Mono.just(this.todoRepository.findById(id));
     }
 }
