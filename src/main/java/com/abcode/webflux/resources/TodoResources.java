@@ -3,8 +3,11 @@ package com.abcode.webflux.resources;
 import com.abcode.webflux.entities.Todo;
 import com.abcode.webflux.repositories.TodoRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
@@ -35,7 +38,20 @@ public class TodoResources {
     }
 
     @GetMapping("/{id}")
-    public Mono<Optional<Todo>> findById(@PathVariable Long id){
+    public Mono<Optional<Todo>> findById(@PathVariable Long id) {
         return Mono.just(this.todoRepository.findById(id));
+    }
+
+    @GetMapping
+    public Flux<Todo> findAll() {
+        return Flux.defer(() -> Flux.fromIterable(this.todoRepository.findAll())).subscribeOn(jdbcScheduler);
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> remove(@PathVariable Long id) {
+        return Mono.fromCallable(() -> this.transactionTemplate.execute(action -> {
+            this.todoRepository.deleteById(id);
+            return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+        })).subscribeOn(jdbcScheduler);
     }
 }
